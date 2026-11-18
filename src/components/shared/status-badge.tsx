@@ -11,7 +11,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const tone =
     normalized === "pending"
       ? "status-pending"
-      : ["approved", "accepted", "paid"].includes(normalized)
+      : ["approved", "accepted", "paid", "active"].includes(normalized)
         ? "status-approved"
         : ["rejected", "failed", "blocked"].includes(normalized)
           ? "status-rejected"

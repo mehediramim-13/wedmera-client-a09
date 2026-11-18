@@ -22,6 +22,7 @@ export type User = {
   bio?: string;
   subscriptionPlan?: "free" | "premium" | string;
   subscriptionExpiresAt?: string | null;
+  createdAt?: string;
 };
 
 export type VendorSummary = {
