@@ -26,6 +26,7 @@ export const queryKeys = {
   customerOverview: ["customer", "overview"] as const,
   customerBookings: (status: string) =>
     ["customer", "bookings", status] as const,
+  customerBooking: (id: string) => ["customer", "booking", id] as const,
   adminOverview: ["admin", "overview"] as const,
   adminUsers: (params: string) => ["admin", "users", params] as const,
   adminServices: (params: string) => ["admin", "services", params] as const,
@@ -128,6 +129,15 @@ export function useCustomerBookings(status = "", enabled = true) {
     queryFn: () =>
       apiFetch<Booking[]>(`/customer/bookings${search ? `?${search}` : ""}`),
     enabled,
+  });
+}
+
+export function useCustomerBooking(id: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.customerBooking(id ?? ""),
+    queryFn: () =>
+      apiFetch<Booking>(`/customer/bookings/${encodeURIComponent(id ?? "")}`),
+    enabled: Boolean(id) && enabled,
   });
 }
 
