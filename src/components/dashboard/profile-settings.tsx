@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoaderCircle, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -34,35 +34,37 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>;
 
-const emptyValues: ProfileValues = {
-  name: "",
-  phone: "",
-  address: "",
-  bio: "",
-  businessName: "",
-};
-
 export function ProfileSettings({ role }: { role: UserRole }) {
-  const queryClient = useQueryClient();
   const profile = useCurrentUser();
-  const [image, setImage] = useState<string[]>([]);
+  if (profile.isLoading) {
+    return <div className="h-96 animate-pulse rounded-2xl bg-muted" />;
+  }
+  if (profile.isError) {
+    return (
+      <ErrorState
+        message={profile.error.message}
+        onRetry={() => void profile.refetch()}
+      />
+    );
+  }
+  if (!profile.data) return null;
+
+  return <ProfileForm role={role} user={profile.data} />;
+}
+
+function ProfileForm({ role, user }: { role: UserRole; user: User }) {
+  const queryClient = useQueryClient();
+  const [image, setImage] = useState<string[]>(user.image ? [user.image] : []);
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: emptyValues,
+    defaultValues: {
+      name: user.name ?? "",
+      phone: user.phone ?? "",
+      address: user.address ?? "",
+      bio: user.bio ?? "",
+      businessName: user.businessName ?? "",
+    },
   });
-
-  useEffect(() => {
-    if (!profile.data) return;
-    form.reset({
-      name: profile.data.name ?? "",
-      phone: profile.data.phone ?? "",
-      address: profile.data.address ?? "",
-      bio: profile.data.bio ?? "",
-      businessName: profile.data.businessName ?? "",
-    });
-    setImage(profile.data.image ? [profile.data.image] : []);
-  }, [form, profile.data]);
-
   const save = useMutation({
     mutationFn: async (values: ProfileValues) =>
       apiFetch<User>("/users/me", {
@@ -78,19 +80,6 @@ export function ProfileSettings({ role }: { role: UserRole }) {
       toast.error(error instanceof Error ? error.message : "Could not update your profile."),
   });
 
-  if (profile.isLoading) {
-    return <div className="h-96 animate-pulse rounded-2xl bg-muted" />;
-  }
-  if (profile.isError) {
-    return (
-      <ErrorState
-        message={profile.error.message}
-        onRetry={() => void profile.refetch()}
-      />
-    );
-  }
-
-  const user = profile.data;
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader

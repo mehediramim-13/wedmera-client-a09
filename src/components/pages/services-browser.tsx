@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 
@@ -31,7 +31,7 @@ export function ServicesBrowser() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [searchText, setSearchText] = useState(searchParams.get("search") ?? "");
+  const searchValue = searchParams.get("search") ?? "";
 
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const limit = 9;
@@ -51,31 +51,18 @@ export function ServicesBrowser() {
     limit,
   });
 
-  useEffect(() => {
-    setSearchText(searchParams.get("search") ?? "");
-  }, [searchParams]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      updateParam("search", searchText, true);
-    }, 350);
-    return () => window.clearTimeout(timer);
-    // URL changes are intentionally delayed to avoid a request for every keystroke.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchText]);
-
-  function updateParam(
+  const updateParam = useCallback((
     key: string,
     value: string,
     resetPage = false,
-  ) {
+  ) => {
     const next = new URLSearchParams(searchParams.toString());
     if (value) next.set(key, value);
     else next.delete(key);
     if (resetPage && key !== "page") next.delete("page");
     const suffix = next.size ? `?${next.toString()}` : "";
     router.replace(`${pathname}${suffix}`, { scroll: false });
-  }
+  }, [pathname, router, searchParams]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
@@ -94,11 +81,10 @@ export function ServicesBrowser() {
           <label className="relative sm:col-span-2 lg:col-span-2">
             <span className="sr-only">Search services</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-10 pl-9"
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="Search services"
-              value={searchText}
+            <DebouncedSearch
+              initialValue={searchValue}
+              key={searchValue}
+              onCommit={(value) => updateParam("search", value, true)}
             />
           </label>
           <label>
@@ -259,5 +245,30 @@ export function ServicesBrowser() {
         </div>
       )}
     </div>
+  );
+}
+
+function DebouncedSearch({
+  initialValue,
+  onCommit,
+}: {
+  initialValue: string;
+  onCommit: (value: string) => void;
+}) {
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    if (value === initialValue) return;
+    const timer = window.setTimeout(() => onCommit(value), 350);
+    return () => window.clearTimeout(timer);
+  }, [initialValue, onCommit, value]);
+
+  return (
+    <Input
+      className="h-10 pl-9"
+      onChange={(event) => setValue(event.target.value)}
+      placeholder="Search services"
+      value={value}
+    />
   );
 }

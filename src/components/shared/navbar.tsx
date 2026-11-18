@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, Settings, UserRound, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, UserRound, LogOut, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
