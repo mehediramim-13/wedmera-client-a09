@@ -31,7 +31,6 @@ export class ApiError extends Error {
 }
 
 let cachedToken: TokenRecord | undefined;
-let loggedToken: string | undefined;
 
 export function clearTokenCache() {
   cachedToken = undefined;
@@ -71,11 +70,6 @@ async function requestToken(force = false) {
 
   const expiresAt = getTokenExpiry(payload.token);
   cachedToken = { value: payload.token, expiresAt };
-
-  if (process.env.NODE_ENV === "development" && loggedToken !== payload.token) {
-    loggedToken = payload.token;
-    console.log("JWT (dev):", payload.token);
-  }
 
   return payload.token;
 }
