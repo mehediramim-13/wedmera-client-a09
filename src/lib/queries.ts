@@ -63,12 +63,12 @@ export function useServices(
   });
 }
 
-export function useService(id: string) {
+export function useService(id: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.service(id),
     queryFn: () =>
-      apiFetch<Service>(`/services/${encodeURIComponent(id)}`, { auth: false }),
-    enabled: Boolean(id),
+      apiFetch<Service>(`/services/${encodeURIComponent(id)}`),
+    enabled: Boolean(id) && enabled,
   });
 }
 

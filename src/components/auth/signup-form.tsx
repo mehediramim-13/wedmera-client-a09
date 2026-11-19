@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { getSafeRedirect, getRoleFromUser } from "@/lib/auth-routing";
-import { uploadImage } from "@/lib/api";
+import { clearTokenCache, uploadImage } from "@/lib/api";
 import type { UserRole } from "@/lib/types";
 
 const signUpSchema = z.object({
@@ -117,6 +117,7 @@ export function SignUpForm() {
       return;
     }
 
+    clearTokenCache();
     const userRole =
       getRoleFromUser(result.data?.user.role) ?? values.role;
     toast.success("Your account is ready.");

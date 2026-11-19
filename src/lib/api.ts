@@ -15,6 +15,7 @@ type ApiOptions = {
 
 type TokenRecord = {
   value: string;
+  userId: string;
   expiresAt: number;
 };
 
@@ -30,38 +31,74 @@ export class ApiError extends Error {
   }
 }
 
-let cachedToken: TokenRecord | undefined;
+const cachedTokens = new Map<string, TokenRecord>();
+const tokenRequests = new Map<string, Promise<TokenRecord>>();
+let tokenCacheGeneration = 0;
 
 export function clearTokenCache() {
-  cachedToken = undefined;
+  tokenCacheGeneration += 1;
+  cachedTokens.clear();
+  tokenRequests.clear();
 }
 
-function getTokenExpiry(token: string) {
+function getTokenExpiry(token: string): number | undefined {
   try {
     const payload = token.split(".")[1];
-    if (!payload) return Date.now() + 60_000;
+    if (!payload) return undefined;
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
     const decoded = JSON.parse(atob(normalized)) as { exp?: number };
-    return decoded.exp ? decoded.exp * 1000 : Date.now() + 60_000;
+    return typeof decoded.exp === "number" ? decoded.exp * 1000 : undefined;
   } catch {
-    return Date.now() + 60_000;
+    return undefined;
   }
 }
 
-async function requestToken(force = false) {
-  if (!force && cachedToken && cachedToken.expiresAt > Date.now() + 30_000) {
-    return cachedToken.value;
+function logApiRequest(
+  path: string,
+  method: string,
+  token: string | undefined,
+  status: number,
+  message: string | undefined,
+) {
+  if (process.env.NODE_ENV !== "development") return;
+  const expiresAt = token ? getTokenExpiry(token) : undefined;
+  console.debug(
+    `[api] ${method} ${path} bearer=${token ? "yes" : "no"} exp=${
+      expiresAt ? new Date(expiresAt).toISOString() : "n/a"
+    } status=${status} message=${message || "-"}`,
+  );
+}
+
+async function fetchTokenForUser(
+  userId: string,
+  generation: number,
+): Promise<TokenRecord> {
+  let response: Response;
+  try {
+    response = await fetch(`${APP_URL}/api/auth/token`, {
+      cache: "no-store",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+  } catch {
+    throw new ApiError(
+      0,
+      "We could not reach the authentication service. Check your connection and try again.",
+    );
   }
 
-  const response = await fetch(`${APP_URL}/api/auth/token`, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
-  });
   const payload = (await response.json().catch(() => null)) as
     | { token?: string; message?: string }
     | null;
 
   if (!response.ok || !payload?.token) {
+    logApiRequest(
+      "/api/auth/token",
+      "GET",
+      undefined,
+      response.status,
+      payload?.message || response.statusText,
+    );
     throw new ApiError(
       response.status || 401,
       payload?.message || "Please sign in to continue.",
@@ -69,9 +106,67 @@ async function requestToken(force = false) {
   }
 
   const expiresAt = getTokenExpiry(payload.token);
-  cachedToken = { value: payload.token, expiresAt };
+  if (!expiresAt || expiresAt <= Date.now()) {
+    logApiRequest(
+      "/api/auth/token",
+      "GET",
+      payload.token,
+      response.status,
+      "Authentication service returned an invalid or expired JWT.",
+    );
+    throw new ApiError(
+      401,
+      "The authentication service returned an invalid or expired token.",
+    );
+  }
 
-  return payload.token;
+  const record = { value: payload.token, userId, expiresAt };
+  if (generation === tokenCacheGeneration) {
+    cachedTokens.set(userId, record);
+  }
+  logApiRequest(
+    "/api/auth/token",
+    "GET",
+    payload.token,
+    response.status,
+    payload.message || "ok",
+  );
+  return record;
+}
+
+async function requestToken(force = false) {
+  const { data: session, error } = await authClient.getSession();
+  const userId = session?.user?.id;
+  if (error || !userId) {
+    clearTokenCache();
+    throw new ApiError(401, error?.message || "Please sign in to continue.");
+  }
+
+  const cached = cachedTokens.get(userId);
+  if (
+    !force &&
+    cached?.userId === userId &&
+    cached.expiresAt > Date.now() + 30_000
+  ) {
+    return cached.value;
+  }
+  cachedTokens.delete(userId);
+
+  const currentRequest = tokenRequests.get(userId);
+  if (!force && currentRequest) return (await currentRequest).value;
+
+  const generation = tokenCacheGeneration;
+  const request = fetchTokenForUser(userId, generation);
+  tokenRequests.set(userId, request);
+  try {
+    const record = await request;
+    if (generation !== tokenCacheGeneration) {
+      throw new ApiError(401, "Your sign-in changed. Please try again.");
+    }
+    return record.value;
+  } finally {
+    if (tokenRequests.get(userId) === request) tokenRequests.delete(userId);
+  }
 }
 
 async function readEnvelope<T>(response: Response): Promise<T> {
@@ -126,6 +221,25 @@ async function send<T>(
     );
   }
 
+  const responseMessage = await response
+    .clone()
+    .json()
+    .then((payload: unknown) =>
+      payload &&
+      typeof payload === "object" &&
+      "message" in payload &&
+      typeof payload.message === "string"
+        ? payload.message
+        : undefined,
+    )
+    .catch(() => undefined);
+  logApiRequest(
+    path,
+    options.method ?? "GET",
+    token,
+    response.status,
+    responseMessage,
+  );
   return { response, data: await readEnvelope<T>(response) };
 }
 
@@ -147,17 +261,12 @@ async function handleAuthorizationError(error: ApiError) {
 
   if (error.status === 401) {
     clearTokenCache();
-    const session = await authClient.getSession();
-    if (session.data?.user) {
-      toast.error(
-        "You’re still signed in, but the service could not authorize this request. Please try again.",
-      );
-      return;
-    }
-
     await authClient.signOut();
     toast.error("Your session expired. Please sign in again.");
-    window.location.assign("/signin");
+    const redirect = `${window.location.pathname}${window.location.search}`;
+    window.location.assign(
+      `/signin?redirect=${encodeURIComponent(redirect)}`,
+    );
   }
 }
 
@@ -166,27 +275,25 @@ export async function apiFetch<T>(
   options: ApiOptions = {},
 ): Promise<T> {
   const requiresAuth = options.auth !== false;
-  let token = requiresAuth ? await requestToken() : undefined;
 
   try {
+    const token = requiresAuth ? await requestToken() : undefined;
     const first = await send<T>(path, options, token);
     return first.data as T;
   } catch (error) {
     if (!(error instanceof ApiError)) throw error;
 
     if (error.status === 401 && requiresAuth) {
-      token = await requestToken(true).catch(() => undefined);
-      if (token) {
-        try {
-          const retry = await send<T>(path, options, token);
-          return retry.data as T;
-        } catch (retryError) {
-          if (retryError instanceof ApiError) {
-            await handleAuthorizationError(retryError);
-            throw retryError;
-          }
-          throw retryError;
+      clearTokenCache();
+      try {
+        const freshToken = await requestToken(true);
+        const retry = await send<T>(path, options, freshToken);
+        return retry.data as T;
+      } catch (retryError) {
+        if (retryError instanceof ApiError) {
+          await handleAuthorizationError(retryError);
         }
+        throw retryError;
       }
     }
 

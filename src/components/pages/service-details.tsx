@@ -29,7 +29,10 @@ export function ServiceDetails({ id }: { id: string }) {
     role: unknown;
   } | null>(null);
   const [sessionCheckError, setSessionCheckError] = useState(false);
-  const serviceQuery = useService(id);
+  const serviceQuery = useService(
+    id,
+    !sessionPending && Boolean(session?.user || verifiedIdentity),
+  );
 
   useEffect(() => {
     if (sessionPending || session?.user || sessionCheckError) return;

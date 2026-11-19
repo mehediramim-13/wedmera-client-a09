@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { clearTokenCache } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { getSafeRedirect } from "@/lib/auth-routing";
 import { getRoleFromUser } from "@/lib/auth-routing";
@@ -62,6 +63,7 @@ export function SignInForm() {
       return;
     }
 
+    clearTokenCache();
     const role = getRoleFromUser(result.data?.user.role) ?? "customer";
     toast.success("Welcome back.");
     router.replace(
