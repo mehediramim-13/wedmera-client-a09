@@ -119,11 +119,11 @@ export function CustomerBookings() {
         <EmptyState
           action={
             <Button render={<Link href="/services" />}>
-              Explore services
+              Browse wedding services
             </Button>
           }
-          description="Once you send a booking request, its status and event details will appear here."
-          title="No bookings to show"
+          description="Browse wedding services and submit a booking request on any service page."
+          title="You haven’t requested any bookings yet"
         />
       )}
 

@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,6 +39,12 @@ const publicLinks = [
   { href: "/services", label: "Browse services" },
 ];
 
+const roleLabels = {
+  customer: "Customer",
+  vendor: "Vendor",
+  admin: "Admin",
+} as const;
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -47,6 +54,12 @@ export function Navbar() {
   const user = session?.user;
   const role = getRoleFromUser(user?.role);
   const profilePath = getProfilePath(role);
+  const links = [
+    ...publicLinks,
+    ...(role === "customer"
+      ? [{ href: "/dashboard/customer", label: "My Bookings" }]
+      : []),
+  ];
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -69,10 +82,21 @@ export function Navbar() {
       >
         <Logo />
         <div className="hidden items-center gap-7 md:flex">
-          {publicLinks.map((link) => (
+          {links.map((link) => (
             <Link
-              aria-current={pathname === link.href ? "page" : undefined}
-              className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+              aria-current={
+                pathname === link.href ||
+                (link.href === "/dashboard/customer" &&
+                  pathname.startsWith("/dashboard/customer"))
+                  ? "page"
+                  : undefined
+              }
+              className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+                link.href === "/dashboard/customer" &&
+                pathname.startsWith("/dashboard/customer")
+                  ? "bg-secondary text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
               href={link.href}
               key={link.href}
             >
@@ -86,14 +110,21 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger
                 aria-label={`Open account menu for ${user.name}`}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-transparent pl-1.5 pr-3 text-sm font-medium outline-none transition hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="inline-flex h-12 items-center gap-2 rounded-full border border-border/70 bg-background pl-1.5 pr-3 text-left outline-none transition hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <Avatar className="size-8">
                   <AvatarImage alt={user.name} src={user.image ?? undefined} />
                   <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
                 </Avatar>
-                <span className="max-w-28 truncate text-sm font-medium">
-                  {user.name}
+                <span className="flex min-w-0 flex-col">
+                  <span className="max-w-36 truncate text-sm font-medium">
+                    {user.name}
+                  </span>
+                  {role ? (
+                    <span className="text-xs capitalize text-muted-foreground">
+                      {roleLabels[role]}
+                    </span>
+                  ) : null}
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -105,6 +136,11 @@ export function Navbar() {
                   <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
                     {user.email}
                   </span>
+                  {role ? (
+                    <Badge className="mt-2 border-0 bg-secondary text-secondary-foreground">
+                      {roleLabels[role]}
+                    </Badge>
+                  ) : null}
                   {user.subscriptionPlan === "premium" ? (
                     <span className="mt-2 inline-flex">
                       <VendorBadge premium />
@@ -166,10 +202,21 @@ export function Navbar() {
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 px-4">
-                {publicLinks.map((link) => (
+                {links.map((link) => (
                   <Link
-                    aria-current={pathname === link.href ? "page" : undefined}
-                    className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted"
+                    aria-current={
+                      pathname === link.href ||
+                      (link.href === "/dashboard/customer" &&
+                        pathname.startsWith("/dashboard/customer"))
+                        ? "page"
+                        : undefined
+                    }
+                    className={`rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted ${
+                      link.href === "/dashboard/customer" &&
+                      pathname.startsWith("/dashboard/customer")
+                        ? "bg-secondary text-primary"
+                        : ""
+                    }`}
                     href={link.href}
                     key={link.href}
                     onClick={closeMobile}
@@ -180,9 +227,14 @@ export function Navbar() {
                 <div className="my-2 border-t" />
                 {user ? (
                   <>
-                    <p className="px-3 py-2 text-sm text-muted-foreground">
-                      {user.name}
-                    </p>
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      {role ? (
+                        <p className="mt-0.5 text-xs capitalize text-muted-foreground">
+                          {roleLabels[role]}
+                        </p>
+                      ) : null}
+                    </div>
                     <Link
                       className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted"
                       href={getDashboardPath(role)}

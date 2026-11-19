@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -173,6 +174,21 @@ export function DashboardShell({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {role === "customer" ? (
+              <Link
+                aria-current={
+                  pathname.startsWith("/dashboard/customer") ? "page" : undefined
+                }
+                className={`hidden rounded-full px-3 py-2 text-sm font-medium transition sm:inline-flex ${
+                  pathname.startsWith("/dashboard/customer")
+                    ? "bg-secondary text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+                href="/dashboard/customer"
+              >
+                My Bookings
+              </Link>
+            ) : null}
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -190,6 +206,9 @@ export function DashboardShell({
                   <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
                     {user?.email}
                   </span>
+                  <Badge className="mt-2 border-0 bg-secondary text-secondary-foreground capitalize">
+                    {role}
+                  </Badge>
                   {role === "vendor" && user?.subscriptionPlan === "premium" ? (
                     <span className="mt-2 inline-flex">
                       <VendorBadge premium />
