@@ -66,7 +66,8 @@ export function useServices(
 export function useService(id: string) {
   return useQuery({
     queryKey: queryKeys.service(id),
-    queryFn: () => apiFetch<Service>(`/services/${encodeURIComponent(id)}`),
+    queryFn: () =>
+      apiFetch<Service>(`/services/${encodeURIComponent(id)}`, { auth: false }),
     enabled: Boolean(id),
   });
 }

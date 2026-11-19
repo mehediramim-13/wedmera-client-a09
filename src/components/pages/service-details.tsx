@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useEffect } from "react";
 import { ArrowLeft, MapPin, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -25,6 +26,12 @@ export function ServiceDetails({ id }: { id: string }) {
   const [activeImage, setActiveImage] = useState(0);
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const serviceQuery = useService(id);
+
+  useEffect(() => {
+    if (!sessionPending && !session?.user) {
+      router.replace(`/signin?redirect=${encodeURIComponent(`/services/${encodeURIComponent(id)}`)}`);
+    }
+  }, [id, router, session?.user, sessionPending]);
 
   if (serviceQuery.isLoading || sessionPending) {
     return (

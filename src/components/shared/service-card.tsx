@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { MapPin } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VendorBadge } from "@/components/shared/vendor-badge";
+import { authClient } from "@/lib/auth-client";
 import type { Service } from "@/lib/types";
 
 export function formatPrice(price: number) {
@@ -16,12 +21,34 @@ export function formatPrice(price: number) {
 }
 
 export function ServiceCard({ service }: { service: Service }) {
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+  const [navigating, setNavigating] = useState(false);
+  const detailsHref = `/services/${encodeURIComponent(service._id)}`;
+
+  function openDetails() {
+    if (isPending) return;
+    setNavigating(true);
+
+    if (!session?.user) {
+      router.push(`/signin?redirect=${encodeURIComponent(detailsHref)}`);
+      router.refresh();
+      return;
+    }
+
+    router.push(detailsHref);
+  }
+
   return (
-    <Card className="group overflow-hidden rounded-2xl border-border/80 py-0 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border/80 py-0 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
       <Link
         aria-label={`View ${service.serviceName}`}
-        className="relative block aspect-[4/3] overflow-hidden bg-muted"
-        href={`/services/${encodeURIComponent(service._id)}`}
+        className="relative block aspect-[4/3] shrink-0 overflow-hidden bg-muted"
+        href={session?.user ? detailsHref : "#"}
+        onClick={(event) => {
+          event.preventDefault();
+          openDetails();
+        }}
       >
         {service.images[0] ? (
           <Image
@@ -40,10 +67,10 @@ export function ServiceCard({ service }: { service: Service }) {
           {service.category}
         </Badge>
       </Link>
-      <CardContent className="space-y-4 p-5">
-        <div>
+      <CardContent className="flex flex-1 flex-col p-5">
+        <div className="min-h-24">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="line-clamp-2 font-heading text-lg font-semibold leading-snug">
+            <h3 className="line-clamp-2 min-h-12 font-heading text-lg font-semibold leading-snug">
               {service.serviceName}
             </h3>
             <VendorBadge premium={service.isPremium || service.vendor.isPremium} />
@@ -53,7 +80,7 @@ export function ServiceCard({ service }: { service: Service }) {
             {service.location}
           </p>
         </div>
-        <div className="flex items-center justify-between gap-3 border-t pt-4">
+        <div className="mt-auto flex items-center justify-between gap-3 border-t pt-4">
           <div className="flex min-w-0 items-center gap-2">
             <Avatar className="size-8">
               <AvatarImage
@@ -70,8 +97,12 @@ export function ServiceCard({ service }: { service: Service }) {
             {formatPrice(service.price)}
           </p>
         </div>
-        <Button className="w-full" render={<Link href={`/services/${encodeURIComponent(service._id)}`} />}>
-          View details
+        <Button
+          className="mt-4 w-full"
+          disabled={isPending || navigating}
+          onClick={openDetails}
+        >
+          {navigating ? "Opening…" : "View details"}
         </Button>
       </CardContent>
     </Card>
