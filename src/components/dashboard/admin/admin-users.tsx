@@ -28,6 +28,10 @@ function createdLabel(value?: string) {
   return isValid(date) ? format(date, "MMM d, yyyy") : "—";
 }
 
+function getUserId(user: User) {
+  return user.id || user._id;
+}
+
 export function AdminUsers() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
@@ -42,11 +46,14 @@ export function AdminUsers() {
   });
 
   const toggleBlocked = useMutation({
-    mutationFn: (user: User) =>
-      apiFetch(`/admin/users/${encodeURIComponent(user.id)}`, {
+    mutationFn: (user: User) => {
+      const id = getUserId(user);
+      if (!id) throw new Error("This account is missing its ID.");
+      return apiFetch(`/admin/users/${encodeURIComponent(id)}`, {
         method: "PATCH",
         body: { isBlocked: !user.isBlocked },
-      }),
+      });
+    },
     onSuccess: async () => {
       toast.success(userToToggle?.isBlocked ? "User unblocked." : "User blocked.");
       setUserToToggle(null);
@@ -120,7 +127,7 @@ export function AdminUsers() {
               </TableHeader>
               <TableBody>
                 {users.data.items.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={getUserId(user) ?? user.email}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell className="capitalize">{user.role}</TableCell>
