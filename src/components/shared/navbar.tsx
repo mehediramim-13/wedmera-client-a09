@@ -85,12 +85,8 @@ export function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger
-                render={
-                  <Button
-                    className="h-10 gap-2 rounded-full pl-1.5 pr-3"
-                    variant="ghost"
-                  />
-                }
+                aria-label={`Open account menu for ${user.name}`}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-transparent pl-1.5 pr-3 text-sm font-medium outline-none transition hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <Avatar className="size-8">
                   <AvatarImage alt={user.name} src={user.image ?? undefined} />
@@ -100,8 +96,11 @@ export function Navbar() {
                   {user.name}
                 </span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
+              <DropdownMenuContent
+                align="end"
+                className="w-64 rounded-2xl border bg-popover p-2"
+              >
+                <DropdownMenuLabel className="px-3 py-3">
                   <span className="block truncate">{user.name}</span>
                   <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
                     {user.email}
@@ -114,23 +113,25 @@ export function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  render={
-                    <Link href={getDashboardPath(role)}>
-                      <LayoutDashboard />
-                      Dashboard
-                    </Link>
-                  }
-                />
+                  className="h-10 cursor-pointer px-3"
+                  onClick={() => router.push(getDashboardPath(role))}
+                >
+                  <LayoutDashboard />
+                  Dashboard
+                </DropdownMenuItem>
                 <DropdownMenuItem
-                  render={
-                    <Link href={profilePath}>
-                      <UserRound />
-                      Profile settings
-                    </Link>
-                  }
-                />
+                  className="h-10 cursor-pointer px-3"
+                  onClick={() => router.push(profilePath)}
+                >
+                  <UserRound />
+                  Profile settings
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
+                <DropdownMenuItem
+                  className="h-10 cursor-pointer px-3"
+                  onClick={() => void handleSignOut()}
+                  variant="destructive"
+                >
                   <LogOut />
                   Sign out
                 </DropdownMenuItem>

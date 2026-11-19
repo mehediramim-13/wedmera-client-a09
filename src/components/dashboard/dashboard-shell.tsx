@@ -28,7 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -177,21 +176,16 @@ export function DashboardShell({
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger
-                render={
-                  <Button
-                    aria-label="Open account menu"
-                    className="size-9 rounded-full p-0"
-                    variant="ghost"
-                  />
-                }
+                aria-label="Open account menu"
+                className="inline-flex size-9 items-center justify-center rounded-full border border-transparent p-0 outline-none transition hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <Avatar className="size-8">
                   <AvatarImage alt={user?.name ?? "Account"} src={user?.image ?? undefined} />
                   <AvatarFallback>{user?.name?.slice(0, 1) ?? "W"}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-64 rounded-2xl border p-2">
+                <DropdownMenuLabel className="px-3 py-3">
                   <span className="block truncate">{user?.name ?? "Account"}</span>
                   <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
                     {user?.email}
@@ -204,14 +198,20 @@ export function DashboardShell({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  render={
-                    <Link href={getProfilePath(roleFromSession ?? role)}>
-                      <Settings />
-                      Profile settings
-                    </Link>
+                  className="h-10 cursor-pointer px-3"
+                  onClick={() =>
+                    router.push(getProfilePath(roleFromSession ?? role))
                   }
-                />
-                <DropdownMenuItem onClick={() => void signOut()}>
+                >
+                  <Settings />
+                  Profile settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="h-10 cursor-pointer px-3"
+                  onClick={() => void signOut()}
+                  variant="destructive"
+                >
                   <LogOut />
                   Sign out
                 </DropdownMenuItem>
