@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, MapPin, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -25,15 +24,50 @@ export function ServiceDetails({ id }: { id: string }) {
   const router = useRouter();
   const [activeImage, setActiveImage] = useState(0);
   const { data: session, isPending: sessionPending } = authClient.useSession();
+  const [verifiedIdentity, setVerifiedIdentity] = useState<{
+    id: string;
+    role: unknown;
+  } | null>(null);
+  const [sessionCheckError, setSessionCheckError] = useState(false);
   const serviceQuery = useService(id);
 
   useEffect(() => {
-    if (!sessionPending && !session?.user) {
-      router.replace(`/signin?redirect=${encodeURIComponent(`/services/${encodeURIComponent(id)}`)}`);
-    }
-  }, [id, router, session?.user, sessionPending]);
+    if (sessionPending || session?.user || sessionCheckError) return;
 
-  if (serviceQuery.isLoading || sessionPending) {
+    let active = true;
+    void authClient
+      .getSession()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          setSessionCheckError(true);
+          return;
+        }
+        if (data?.user) {
+          setVerifiedIdentity({
+            id: data.user.id,
+            role: data.user.role,
+          });
+          return;
+        }
+        router.replace(
+          `/signin?redirect=${encodeURIComponent(`/services/${encodeURIComponent(id)}`)}`,
+        );
+      })
+      .catch(() => {
+        if (active) setSessionCheckError(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id, router, session?.user, sessionCheckError, sessionPending]);
+
+  if (
+    serviceQuery.isLoading ||
+    sessionPending ||
+    (!session?.user && !verifiedIdentity && !sessionCheckError)
+  ) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Skeleton className="mb-6 h-9 w-36" />
@@ -45,6 +79,18 @@ export function ServiceDetails({ id }: { id: string }) {
             <Skeleton className="h-48 w-full" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (sessionCheckError && !session?.user && !verifiedIdentity) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <ErrorState
+          message="We couldn’t verify your sign-in. Please check your connection and try again."
+          onRetry={() => setSessionCheckError(false)}
+          title="Sign-in check failed"
+        />
       </div>
     );
   }
@@ -82,7 +128,7 @@ export function ServiceDetails({ id }: { id: string }) {
   }
 
   const service = serviceQuery.data;
-  const user = session?.user;
+  const user = session?.user ?? verifiedIdentity;
   const role = getRoleFromUser(user?.role);
   const ownService = role === "vendor" && user?.id === service.vendorId;
   const cannotBook = role === "vendor" || role === "admin";

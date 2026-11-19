@@ -147,6 +147,14 @@ async function handleAuthorizationError(error: ApiError) {
 
   if (error.status === 401) {
     clearTokenCache();
+    const session = await authClient.getSession();
+    if (session.data?.user) {
+      toast.error(
+        "You’re still signed in, but the service could not authorize this request. Please try again.",
+      );
+      return;
+    }
+
     await authClient.signOut();
     toast.error("Your session expired. Please sign in again.");
     window.location.assign("/signin");

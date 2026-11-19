@@ -1,9 +1,5 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { MapPin } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VendorBadge } from "@/components/shared/vendor-badge";
-import { authClient } from "@/lib/auth-client";
 import type { Service } from "@/lib/types";
 
 export function formatPrice(price: number) {
@@ -21,34 +16,14 @@ export function formatPrice(price: number) {
 }
 
 export function ServiceCard({ service }: { service: Service }) {
-  const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
-  const [navigating, setNavigating] = useState(false);
   const detailsHref = `/services/${encodeURIComponent(service._id)}`;
-
-  function openDetails() {
-    if (isPending) return;
-    setNavigating(true);
-
-    if (!session?.user) {
-      router.push(`/signin?redirect=${encodeURIComponent(detailsHref)}`);
-      router.refresh();
-      return;
-    }
-
-    router.push(detailsHref);
-  }
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border/80 py-0 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
       <Link
         aria-label={`View ${service.serviceName}`}
         className="relative block aspect-[4/3] shrink-0 overflow-hidden bg-muted"
-        href={session?.user ? detailsHref : "#"}
-        onClick={(event) => {
-          event.preventDefault();
-          openDetails();
-        }}
+        href={detailsHref}
       >
         {service.images[0] ? (
           <Image
@@ -99,10 +74,9 @@ export function ServiceCard({ service }: { service: Service }) {
         </div>
         <Button
           className="mt-4 w-full"
-          disabled={isPending || navigating}
-          onClick={openDetails}
+          render={<Link href={detailsHref} />}
         >
-          {navigating ? "Opening…" : "View details"}
+          View details
         </Button>
       </CardContent>
     </Card>
