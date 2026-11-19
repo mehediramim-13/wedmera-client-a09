@@ -18,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Logo } from "@/components/shared/logo";
+import { Navbar } from "@/components/shared/navbar";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +84,10 @@ function DashboardSidebar({ role }: { role: UserRole }) {
   const compact = state === "collapsed" && !isMobile;
 
   return (
-    <Sidebar collapsible="icon" className="border-sidebar-border">
+    <Sidebar
+      className="inset-y-auto top-16 h-[calc(100svh-4rem)] border-sidebar-border"
+      collapsible="icon"
+    >
       <SidebarHeader className="min-h-16 justify-center border-b border-sidebar-border px-3">
         <Logo
           className={compact ? "justify-center" : ""}
@@ -159,10 +163,12 @@ export function DashboardShell({
   const roleFromSession = getRoleFromUser(user?.role);
 
   return (
-    <SidebarProvider>
-      <DashboardSidebar role={role} />
-      <SidebarInset className="min-h-svh">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/90 px-4 backdrop-blur-xl sm:px-6">
+    <>
+      <Navbar />
+      <SidebarProvider className="min-h-[calc(100svh-4rem)]">
+        <DashboardSidebar role={role} />
+        <SidebarInset className="min-h-[calc(100svh-4rem)]">
+        <header className="sticky top-16 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/90 px-4 backdrop-blur-xl sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <SidebarTrigger aria-label="Toggle dashboard navigation" />
             <div className="hidden min-w-0 sm:block">
@@ -241,7 +247,8 @@ export function DashboardShell({
         <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           {children}
         </main>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </>
   );
 }

@@ -58,8 +58,16 @@ export function Navbar() {
     ...publicLinks,
     ...(role === "customer"
       ? [{ href: "/dashboard/customer", label: "My Bookings" }]
-      : []),
+      : role === "vendor"
+        ? [{ href: "/dashboard/vendor", label: "Vendor Hub" }]
+        : role === "admin"
+          ? [{ href: "/dashboard/admin", label: "Admin Hub" }]
+          : []),
   ];
+
+  function isActiveLink(href: string) {
+    return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+  }
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -84,16 +92,9 @@ export function Navbar() {
         <div className="hidden items-center gap-7 md:flex">
           {links.map((link) => (
             <Link
-              aria-current={
-                pathname === link.href ||
-                (link.href === "/dashboard/customer" &&
-                  pathname.startsWith("/dashboard/customer"))
-                  ? "page"
-                  : undefined
-              }
+              aria-current={isActiveLink(link.href) ? "page" : undefined}
               className={`rounded-full px-3 py-2 text-sm font-medium transition ${
-                link.href === "/dashboard/customer" &&
-                pathname.startsWith("/dashboard/customer")
+                isActiveLink(link.href)
                   ? "bg-secondary text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
@@ -204,16 +205,9 @@ export function Navbar() {
               <div className="flex flex-col gap-1 px-4">
                 {links.map((link) => (
                   <Link
-                    aria-current={
-                      pathname === link.href ||
-                      (link.href === "/dashboard/customer" &&
-                        pathname.startsWith("/dashboard/customer"))
-                        ? "page"
-                        : undefined
-                    }
+                    aria-current={isActiveLink(link.href) ? "page" : undefined}
                     className={`rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted ${
-                      link.href === "/dashboard/customer" &&
-                      pathname.startsWith("/dashboard/customer")
+                      isActiveLink(link.href)
                         ? "bg-secondary text-primary"
                         : ""
                     }`}
