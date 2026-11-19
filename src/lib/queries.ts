@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
+import { isPremiumPlan } from "@/lib/subscription-utils";
 import type {
   Booking,
   CategoryCount,
@@ -105,6 +106,8 @@ export function useVendorTransactions(enabled = true) {
       apiFetch<Paginated<Transaction> | Transaction[]>("/vendor/transactions"),
     enabled,
     retry: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -126,16 +129,15 @@ export function useSubscription(
     queryKey: queryKeys.subscription,
     queryFn: () => apiFetch<Record<string, unknown>>("/vendor/subscription"),
     enabled,
-    refetchOnMount: confirmPayment ? "always" : undefined,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     refetchInterval: confirmPayment
       ? (query) => {
           const plan =
             query.state.data?.plan ??
             query.state.data?.subscriptionPlan ??
             query.state.data?.currentPlan;
-          if (typeof plan === "string" && plan.toLowerCase() === "premium") {
-            return false;
-          }
+          if (isPremiumPlan(plan)) return false;
           if (
             query.state.dataUpdateCount + query.state.errorUpdateCount >=
             15
