@@ -342,3 +342,45 @@ export async function uploadImage(file: File): Promise<string> {
     throw error;
   }
 }
+
+export async function uploadVendorServiceImage(file: File): Promise<string> {
+  if (!IMAGE_TYPES.has(file.type)) {
+    const error = new ApiError(
+      400,
+      "Choose a JPEG, PNG, WebP, or GIF image.",
+    );
+    toast.error(error.message);
+    throw error;
+  }
+  if (file.size > MAX_IMAGE_SIZE) {
+    const error = new ApiError(400, "Images must be 5 MB or smaller.");
+    toast.error(error.message);
+    throw error;
+  }
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  try {
+    const response = await fetch("/api/vendor-image-upload", {
+      method: "POST",
+      body: formData,
+      credentials: "same-origin",
+    });
+    const result = (await response.json().catch(() => null)) as
+      | { url?: string; message?: string }
+      | null;
+    if (!response.ok || !result?.url) {
+      throw new ApiError(
+        response.status,
+        result?.message || "Image upload failed.",
+      );
+    }
+    return result.url;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Image upload failed.";
+    toast.error(message);
+    throw error;
+  }
+}

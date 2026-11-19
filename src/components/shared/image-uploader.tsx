@@ -12,10 +12,12 @@ export function ImageUploader({
   images,
   onChange,
   maxFiles = 5,
+  uploadFile = uploadImage,
 }: {
   images: string[];
   onChange: (images: string[]) => void;
   maxFiles?: number;
+  uploadFile?: (file: File) => Promise<string>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -32,7 +34,7 @@ export function ImageUploader({
     const uploaded: string[] = [];
     try {
       for (const file of Array.from(files)) {
-        uploaded.push(await uploadImage(file));
+        uploaded.push(await uploadFile(file));
       }
       onChange([...images, ...uploaded]);
       toast.success(

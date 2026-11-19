@@ -26,7 +26,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CATEGORIES } from "@/lib/config";
-import { ApiError, apiFetch } from "@/lib/api";
+import {
+  ApiError,
+  apiFetch,
+  uploadVendorServiceImage,
+} from "@/lib/api";
 import { queryKeys, useVendorServices, useSubscription } from "@/lib/queries";
 import type { Service } from "@/lib/types";
 
@@ -266,6 +270,7 @@ export function VendorServiceForm({
                     setImages(next);
                     form.setValue("images", next, { shouldValidate: true });
                   }}
+                  uploadFile={uploadVendorServiceImage}
                 />
                 {form.formState.errors.images ? (
                   <p className="text-sm text-destructive">
