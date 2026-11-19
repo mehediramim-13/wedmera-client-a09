@@ -31,6 +31,7 @@ const freeFeatures = [
 const premiumFeatures = [
   "Unlimited active services",
   "Premium vendor badge",
+  "Featured service placement",
   "All Free plan features",
 ];
 
@@ -160,7 +161,7 @@ export function VendorSubscription() {
           features={freeFeatures}
           name="Free"
           selected={!isPremium}
-          price="৳ 0"
+          price="$0"
         />
         <PlanCard
           action={
@@ -252,11 +253,9 @@ function PlanCard({
         <p className="text-sm text-muted-foreground">{description}</p>
         <p className="pt-2 text-3xl font-semibold text-primary">
           {price}
-          {name === "Premium" ? (
-            <span className="ml-1 text-sm font-normal text-muted-foreground">
-              / month
-            </span>
-          ) : null}
+          <span className="ml-1 text-sm font-normal text-muted-foreground">
+            / month
+          </span>
         </p>
       </CardHeader>
       <CardContent>

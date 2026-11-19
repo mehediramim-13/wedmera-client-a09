@@ -1,18 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, CircleAlert, XCircle } from "lucide-react";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, CheckCircle2, CircleAlert, XCircle } from "lucide-react";
 
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useSubscription } from "@/lib/queries";
+import { PREMIUM_PRICE_LABEL } from "@/lib/config";
+import { queryKeys, useSubscription } from "@/lib/queries";
+
+const premiumFeatures = [
+  "Unlimited active services",
+  "Premium vendor badge",
+  "Featured service placement",
+  "Basic vendor dashboard",
+  "Booking request management",
+];
 
 export function PaymentSuccess() {
-  const subscription = useSubscription();
-  const plan = subscription.data?.plan ?? subscription.data?.subscriptionPlan;
+  const queryClient = useQueryClient();
+  const subscription = useSubscription(true, true);
+  const plan =
+    subscription.data?.plan ??
+    subscription.data?.subscriptionPlan ??
+    subscription.data?.currentPlan;
   const premium =
     typeof plan === "string" && plan.toLowerCase() === "premium";
+
+  useEffect(() => {
+    if (!premium) return;
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.me }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.vendorOverview,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.vendorServices,
+      }),
+    ]);
+  }, [premium, queryClient]);
 
   return (
     <PaymentLayout>
@@ -30,7 +58,7 @@ export function PaymentSuccess() {
       <div className="mt-5 flex min-h-8 items-center justify-center">
         {subscription.isLoading ? (
           <span className="text-sm text-muted-foreground">
-            Checking subscription status…
+            Confirming your Premium subscription…
           </span>
         ) : subscription.isError ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -45,9 +73,29 @@ export function PaymentSuccess() {
             </button>
           </div>
         ) : premium ? (
-          <StatusBadge status="Premium" />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <StatusBadge status="Premium" />
+            <span className="text-sm text-muted-foreground">
+              {PREMIUM_PRICE_LABEL} / month
+            </span>
+          </div>
         ) : null}
       </div>
+      {premium ? (
+        <div className="mx-auto mt-6 max-w-md rounded-2xl border bg-card p-5 text-left">
+          <h2 className="font-heading text-lg font-semibold">
+            Your Premium benefits
+          </h2>
+          <ul className="mt-4 space-y-3">
+            {premiumFeatures.map((feature) => (
+              <li className="flex items-start gap-2 text-sm" key={feature}>
+                <Check className="mt-0.5 size-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
         <Button render={<Link href="/dashboard/vendor/subscription" />}>
           View subscription

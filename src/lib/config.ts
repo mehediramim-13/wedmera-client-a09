@@ -8,8 +8,7 @@ export const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
   "http://localhost:5000/api";
 
-export const PREMIUM_PRICE_LABEL =
-  process.env.NEXT_PUBLIC_PREMIUM_PRICE_LABEL ?? "$10 / month";
+export const PREMIUM_PRICE_LABEL = "$49";
 
 export const CATEGORIES = [
   "Photography & Videography",

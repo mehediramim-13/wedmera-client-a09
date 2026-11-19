@@ -107,11 +107,33 @@ export function useVendorBookings(status = "", enabled = true) {
   });
 }
 
-export function useSubscription(enabled = true) {
+export function useSubscription(
+  enabled = true,
+  confirmPayment = false,
+) {
   return useQuery({
     queryKey: queryKeys.subscription,
     queryFn: () => apiFetch<Record<string, unknown>>("/vendor/subscription"),
     enabled,
+    refetchOnMount: confirmPayment ? "always" : undefined,
+    refetchInterval: confirmPayment
+      ? (query) => {
+          const plan =
+            query.state.data?.plan ??
+            query.state.data?.subscriptionPlan ??
+            query.state.data?.currentPlan;
+          if (typeof plan === "string" && plan.toLowerCase() === "premium") {
+            return false;
+          }
+          if (
+            query.state.dataUpdateCount + query.state.errorUpdateCount >=
+            15
+          ) {
+            return false;
+          }
+          return 2_000;
+        }
+      : false,
   });
 }
 

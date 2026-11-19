@@ -31,7 +31,6 @@ review marketplace activity.
    DB_NAME=wedmera
    GOOGLE_CLIENT_ID=<google-oauth-client-id>
    GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
-   NEXT_PUBLIC_PREMIUM_PRICE_LABEL=$10 / month
    ```
 
    Use the same MongoDB database and user identifiers expected by the API.
@@ -73,5 +72,6 @@ review marketplace activity.
   error, and not-found states
 
 Admin accounts are provisioned by the platform and cannot be created through
-public sign-up. The Premium price label is configurable for display; the API
-remains responsible for the actual checkout amount and payment confirmation.
+public sign-up. Premium is displayed as $49/month. The API remains responsible
+for the actual checkout amount and payment confirmation; Stripe secret and
+webhook keys belong in the backend environment, never the frontend environment.
