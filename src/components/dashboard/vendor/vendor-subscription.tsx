@@ -59,12 +59,7 @@ export function VendorSubscription() {
   const subscription = useSubscription();
   const services = useVendorServices();
   const transactions = useVendorTransactions();
-  const plan = firstString(
-    subscription.data,
-    "plan",
-    "subscriptionPlan",
-    "currentPlan",
-  ) ?? "free";
+  const plan = firstString(subscription.data, "effectivePlan") ?? "free";
   const isPremium = isPremiumPlan(plan);
   const expiresAt = firstString(
     subscription.data,

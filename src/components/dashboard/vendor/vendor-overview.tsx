@@ -92,7 +92,7 @@ export function VendorOverview() {
           detail="Current plan"
           icon={CreditCard}
           label="Subscription"
-          value={metric(data, "subscriptionPlan", "currentPlan", "plan")}
+          value={metric(data, "effectivePlan")}
         />
       </div>
       <div className="mt-8 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">

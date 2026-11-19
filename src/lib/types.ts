@@ -21,6 +21,7 @@ export type User = {
   address?: string;
   bio?: string;
   subscriptionPlan?: "free" | "premium" | string;
+  effectivePlan?: string;
   subscriptionExpiresAt?: string | null;
   createdAt?: string;
 };
@@ -95,7 +96,9 @@ export type ApiEnvelope<T> = {
   errors?: unknown;
 };
 
-export type DashboardOverview = Record<string, number | string | null>;
+export type DashboardOverview = Record<string, number | string | null> & {
+  effectivePlan?: string;
+};
 
 export type Transaction = {
   _id: string;

@@ -51,7 +51,7 @@ import { clearTokenCache } from "@/lib/api";
 import { getProfilePath } from "@/lib/paths";
 import type { UserRole } from "@/lib/types";
 import { getRoleFromUser } from "@/lib/auth-routing";
-import { useCurrentUser, useSubscription } from "@/lib/queries";
+import { useSubscription } from "@/lib/queries";
 import { isPremiumPlan } from "@/lib/subscription-utils";
 
 const navigation = {
@@ -84,6 +84,8 @@ function DashboardSidebar({ role }: { role: UserRole }) {
   const { isMobile, state } = useSidebar();
   const currentPath = usePathname();
   const compact = state === "collapsed" && !isMobile;
+  const subscription = useSubscription(role === "vendor");
+  const isPremium = isPremiumPlan(subscription.data?.effectivePlan);
 
   return (
     <Sidebar
@@ -130,7 +132,11 @@ function DashboardSidebar({ role }: { role: UserRole }) {
               {role === "admin"
                 ? "Administration"
                 : role === "vendor"
-                  ? "Vendor workspace"
+                  ? typeof subscription.data?.effectivePlan === "string"
+                    ? isPremium
+                      ? "Premium vendor"
+                      : "Free vendor plan"
+                    : "Vendor workspace"
                   : "Your wedding plans"}
             </span>
           ) : null}
@@ -152,23 +158,10 @@ export function DashboardShell({
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const user = session?.user;
-  const currentUser = useCurrentUser(role === "vendor");
   const subscription = useSubscription(role === "vendor");
-  const subscriptionPlan =
-    typeof subscription.data?.plan === "string"
-      ? subscription.data.plan
-      : typeof subscription.data?.subscriptionPlan === "string"
-        ? subscription.data.subscriptionPlan
-        : typeof subscription.data?.currentPlan === "string"
-          ? subscription.data.currentPlan
-          : undefined;
   const vendorIsPremium =
     role === "vendor" &&
-    isPremiumPlan(
-      subscriptionPlan ??
-        currentUser.data?.subscriptionPlan ??
-        user?.subscriptionPlan,
-    );
+    isPremiumPlan(subscription.data?.effectivePlan);
 
   async function signOut() {
     await authClient.signOut();

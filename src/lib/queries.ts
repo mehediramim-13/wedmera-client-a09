@@ -20,6 +20,8 @@ export const queryKeys = {
   services: (params: string) => ["services", params] as const,
   service: (id: string) => ["service", id] as const,
   me: ["me"] as const,
+  paymentSession: (sessionId: string) =>
+    ["payment", "session", sessionId] as const,
   vendorOverview: ["vendor", "overview"] as const,
   vendorServices: ["vendor", "services"] as const,
   vendorTransactions: ["vendor", "transactions"] as const,
@@ -33,6 +35,12 @@ export const queryKeys = {
   adminUsers: (params: string) => ["admin", "users", params] as const,
   adminServices: (params: string) => ["admin", "services", params] as const,
   transactions: (params: string) => ["admin", "transactions", params] as const,
+};
+
+export const queryFns = {
+  me: () => apiFetch<User>("/users/me"),
+  vendorOverview: () => apiFetch<DashboardOverview>("/vendor/overview"),
+  subscription: () => apiFetch<Record<string, unknown>>("/vendor/subscription"),
 };
 
 function makeSearchParams(params: Record<string, string | number | undefined>) {
@@ -77,17 +85,57 @@ export function useService(id: string, enabled = true) {
 export function useCurrentUser(enabled = true) {
   return useQuery({
     queryKey: queryKeys.me,
-    queryFn: () => apiFetch<User>("/users/me"),
+    queryFn: queryFns.me,
     enabled,
     retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }
 
 export function useVendorOverview(enabled = true) {
   return useQuery({
     queryKey: queryKeys.vendorOverview,
-    queryFn: () => apiFetch<DashboardOverview>("/vendor/overview"),
+    queryFn: queryFns.vendorOverview,
     enabled,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+}
+
+export function usePaymentSession(sessionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.paymentSession(sessionId ?? ""),
+    queryFn: async () => {
+      const response = await apiFetch<unknown>(
+        `/payments/session/${encodeURIComponent(sessionId ?? "")}`,
+      );
+      const transaction =
+        typeof response === "object" &&
+        response !== null &&
+        "transaction" in response
+          ? response.transaction
+          : response;
+      const hasTransactionId =
+        typeof transaction === "object" &&
+        transaction !== null &&
+        (("_id" in transaction && typeof transaction._id === "string") ||
+          ("id" in transaction && typeof transaction.id === "string"));
+      if (
+        typeof transaction !== "object" ||
+        transaction === null ||
+        !("status" in transaction) ||
+        typeof transaction.status !== "string" ||
+        !hasTransactionId
+      ) {
+        throw new Error("The payment session could not be verified.");
+      }
+      return transaction;
+    },
+    enabled: Boolean(sessionId),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }
 
@@ -127,16 +175,15 @@ export function useSubscription(
 ) {
   return useQuery({
     queryKey: queryKeys.subscription,
-    queryFn: () => apiFetch<Record<string, unknown>>("/vendor/subscription"),
+    queryFn: queryFns.subscription,
     enabled,
+    staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchInterval: confirmPayment
       ? (query) => {
           const plan =
-            query.state.data?.plan ??
-            query.state.data?.subscriptionPlan ??
-            query.state.data?.currentPlan;
+            query.state.data?.effectivePlan;
           if (isPremiumPlan(plan)) return false;
           if (
             query.state.dataUpdateCount + query.state.errorUpdateCount >=

@@ -58,13 +58,9 @@ export function ProfileSettings({ role }: { role: UserRole }) {
       role={role}
       user={profile.data}
       subscriptionPlan={
-        typeof subscription.data?.plan === "string"
-          ? subscription.data.plan
-          : typeof subscription.data?.subscriptionPlan === "string"
-            ? subscription.data.subscriptionPlan
-            : typeof subscription.data?.currentPlan === "string"
-              ? subscription.data.currentPlan
-              : undefined
+        typeof subscription.data?.effectivePlan === "string"
+          ? subscription.data.effectivePlan
+          : undefined
       }
     />
   );
@@ -126,7 +122,7 @@ function ProfileForm({
                   {role}
                 </Badge>
                 {role === "vendor" &&
-                (isPremiumPlan(user.subscriptionPlan) ||
+                (isPremiumPlan(user.effectivePlan) ||
                   isPremiumPlan(subscriptionPlan)) ? (
                   <VendorBadge premium />
                 ) : null}

@@ -33,7 +33,7 @@ import { clearTokenCache } from "@/lib/api";
 import { getDashboardPath, getProfilePath } from "@/lib/paths";
 import { getRoleFromUser } from "@/lib/auth-routing";
 import { SITE_NAME } from "@/lib/config";
-import { useCurrentUser, useSubscription } from "@/lib/queries";
+import { useSubscription } from "@/lib/queries";
 import { isPremiumPlan } from "@/lib/subscription-utils";
 
 const publicLinks = [
@@ -55,23 +55,10 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const user = session?.user;
   const role = getRoleFromUser(user?.role);
-  const currentUser = useCurrentUser(role === "vendor");
   const subscription = useSubscription(role === "vendor");
-  const subscriptionPlan =
-    typeof subscription.data?.plan === "string"
-      ? subscription.data.plan
-      : typeof subscription.data?.subscriptionPlan === "string"
-        ? subscription.data.subscriptionPlan
-        : typeof subscription.data?.currentPlan === "string"
-          ? subscription.data.currentPlan
-          : undefined;
   const vendorIsPremium =
     role === "vendor" &&
-    isPremiumPlan(
-      subscriptionPlan ??
-        currentUser.data?.subscriptionPlan ??
-        user?.subscriptionPlan,
-    );
+    isPremiumPlan(subscription.data?.effectivePlan);
   const profilePath = getProfilePath(role);
   const links = [
     ...publicLinks,

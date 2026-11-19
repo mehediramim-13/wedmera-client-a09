@@ -120,7 +120,7 @@ export function VendorServiceForm({
 
   const activeCount =
     existingServices.data?.filter((item) => item.isActive).length ?? "—";
-  const planValue = subscription.data?.plan ?? subscription.data?.subscriptionPlan;
+  const planValue = subscription.data?.effectivePlan;
   const plan =
     typeof planValue === "string" ? planValue : "Free";
 
