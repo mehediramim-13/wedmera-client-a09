@@ -209,6 +209,48 @@ export function ServiceDetails({ id }: { id: string }) {
                 {service.description}
               </p>
             </div>
+            <div className="mt-8">
+              <h2 className="font-heading text-xl font-semibold">
+                Vendor Information
+              </h2>
+              <Card className="mt-4 rounded-2xl border-border/80 bg-card shadow-none">
+                <CardContent className="flex items-start gap-4 p-5 sm:p-6">
+                  <Avatar className="size-14 shrink-0 sm:size-16">
+                    <AvatarImage
+                      alt={service.vendor.businessName || service.vendor.name}
+                      src={service.vendor.image ?? undefined}
+                    />
+                    <AvatarFallback>
+                      {(service.vendor.businessName || service.vendor.name).slice(0, 1)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-heading text-lg font-semibold leading-tight sm:text-xl">
+                        {service.vendor.businessName || service.vendor.name}
+                      </h3>
+                      {(service.isPremium || service.vendor.isPremium) ? (
+                        <VendorBadge premium />
+                      ) : null}
+                    </div>
+                    {service.vendor.address ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Based in {service.vendor.address}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {service.location}
+                      </p>
+                    )}
+                    {service.vendor.bio ? (
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
+                        {service.vendor.bio}
+                      </p>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 

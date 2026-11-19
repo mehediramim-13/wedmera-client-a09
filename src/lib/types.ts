@@ -30,6 +30,8 @@ export type VendorSummary = {
   name: string;
   image?: string | null;
   businessName?: string;
+  address?: string;
+  bio?: string;
   isPremium: boolean;
 };
 
