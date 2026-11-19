@@ -19,6 +19,7 @@ import { authClient } from "@/lib/auth-client";
 import { useService } from "@/lib/queries";
 import { formatPrice } from "@/components/shared/service-card";
 import { getRoleFromUser } from "@/lib/auth-routing";
+import { isPremiumPlan } from "@/lib/subscription-utils";
 
 export function ServiceDetails({ id }: { id: string }) {
   const router = useRouter();
@@ -136,6 +137,10 @@ export function ServiceDetails({ id }: { id: string }) {
   const ownService = role === "vendor" && user?.id === service.vendorId;
   const cannotBook = role === "vendor" || role === "admin";
   const currentImage = service.images[activeImage] ?? service.images[0];
+  const vendorIsPremium =
+    service.isPremium === true ||
+    service.vendor.isPremium === true ||
+    isPremiumPlan(service.vendor.subscriptionPlan);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
@@ -192,9 +197,7 @@ export function ServiceDetails({ id }: { id: string }) {
           <div className="mt-8">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={service.status} />
-              <VendorBadge
-                premium={service.isPremium || service.vendor.isPremium}
-              />
+              <VendorBadge premium={vendorIsPremium} />
             </div>
             <h1 className="mt-4 font-heading text-3xl font-semibold leading-tight sm:text-4xl">
               {service.serviceName}
@@ -229,9 +232,7 @@ export function ServiceDetails({ id }: { id: string }) {
                       <h3 className="font-heading text-lg font-semibold leading-tight sm:text-xl">
                         {service.vendor.businessName || service.vendor.name}
                       </h3>
-                      {(service.isPremium || service.vendor.isPremium) ? (
-                        <VendorBadge premium />
-                      ) : null}
+                      {vendorIsPremium ? <VendorBadge premium /> : null}
                     </div>
                     {service.vendor.address ? (
                       <p className="mt-1 text-sm text-muted-foreground">

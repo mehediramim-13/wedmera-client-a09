@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VendorBadge } from "@/components/shared/vendor-badge";
+import { isPremiumPlan } from "@/lib/subscription-utils";
 import type { Service } from "@/lib/types";
 
 export function formatPrice(price: number) {
@@ -17,6 +18,10 @@ export function formatPrice(price: number) {
 
 export function ServiceCard({ service }: { service: Service }) {
   const detailsHref = `/services/${encodeURIComponent(service._id)}`;
+  const vendorIsPremium =
+    service.isPremium === true ||
+    service.vendor.isPremium === true ||
+    isPremiumPlan(service.vendor.subscriptionPlan);
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border/80 py-0 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
@@ -48,7 +53,7 @@ export function ServiceCard({ service }: { service: Service }) {
             <h3 className="line-clamp-2 min-h-12 font-heading text-lg font-semibold leading-snug">
               {service.serviceName}
             </h3>
-            <VendorBadge premium={service.isPremium || service.vendor.isPremium} />
+            <VendorBadge premium={vendorIsPremium} />
           </div>
           <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
             <MapPin className="size-4 shrink-0" />

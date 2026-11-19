@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PREMIUM_PRICE_LABEL } from "@/lib/config";
 import { queryKeys, useSubscription } from "@/lib/queries";
+import { isPremiumPlan } from "@/lib/subscription-utils";
 
 const premiumFeatures = [
   "Unlimited active services",
@@ -26,8 +27,7 @@ export function PaymentSuccess() {
     subscription.data?.plan ??
     subscription.data?.subscriptionPlan ??
     subscription.data?.currentPlan;
-  const premium =
-    typeof plan === "string" && plan.toLowerCase() === "premium";
+  const premium = isPremiumPlan(plan);
 
   useEffect(() => {
     if (!premium) return;
@@ -38,6 +38,9 @@ export function PaymentSuccess() {
       }),
       queryClient.invalidateQueries({
         queryKey: queryKeys.vendorServices,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.vendorTransactions,
       }),
     ]);
   }, [premium, queryClient]);

@@ -32,7 +32,8 @@ export type VendorSummary = {
   businessName?: string;
   address?: string;
   bio?: string;
-  isPremium: boolean;
+  isPremium?: boolean;
+  subscriptionPlan?: string;
 };
 
 export type Service = {
@@ -47,7 +48,7 @@ export type Service = {
   status: ServiceStatus;
   createdAt: string;
   vendor: VendorSummary;
-  isPremium: boolean;
+  isPremium?: boolean;
   isActive?: boolean;
 };
 
@@ -98,9 +99,12 @@ export type DashboardOverview = Record<string, number | string | null>;
 
 export type Transaction = {
   _id: string;
+  id?: string;
   vendor?: Pick<User, "id" | "name" | "email" | "businessName">;
-  subscriptionPlan: string;
+  subscriptionPlan?: string;
+  plan?: string;
   amount: number;
   status: string;
   createdAt: string;
+  date?: string;
 };

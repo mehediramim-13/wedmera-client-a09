@@ -21,6 +21,7 @@ export const queryKeys = {
   me: ["me"] as const,
   vendorOverview: ["vendor", "overview"] as const,
   vendorServices: ["vendor", "services"] as const,
+  vendorTransactions: ["vendor", "transactions"] as const,
   vendorBookings: (status: string) => ["vendor", "bookings", status] as const,
   subscription: ["vendor", "subscription"] as const,
   customerOverview: ["customer", "overview"] as const,
@@ -94,6 +95,16 @@ export function useVendorServices(enabled = true) {
     queryKey: queryKeys.vendorServices,
     queryFn: () => apiFetch<Service[]>("/vendor/services"),
     enabled,
+  });
+}
+
+export function useVendorTransactions(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.vendorTransactions,
+    queryFn: () =>
+      apiFetch<Paginated<Transaction> | Transaction[]>("/vendor/transactions"),
+    enabled,
+    retry: false,
   });
 }
 

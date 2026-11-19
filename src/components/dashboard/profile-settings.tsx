@@ -16,8 +16,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { VendorBadge } from "@/components/shared/vendor-badge";
 import { apiFetch } from "@/lib/api";
-import { queryKeys, useCurrentUser } from "@/lib/queries";
+import { queryKeys, useCurrentUser, useSubscription } from "@/lib/queries";
+import { isPremiumPlan } from "@/lib/subscription-utils";
 import type { User, UserRole } from "@/lib/types";
 
 const profileSchema = z.object({
@@ -36,6 +39,7 @@ type ProfileValues = z.infer<typeof profileSchema>;
 
 export function ProfileSettings({ role }: { role: UserRole }) {
   const profile = useCurrentUser();
+  const subscription = useSubscription(role === "vendor");
   if (profile.isLoading) {
     return <div className="h-96 animate-pulse rounded-2xl bg-muted" />;
   }
@@ -49,10 +53,32 @@ export function ProfileSettings({ role }: { role: UserRole }) {
   }
   if (!profile.data) return null;
 
-  return <ProfileForm role={role} user={profile.data} />;
+  return (
+    <ProfileForm
+      role={role}
+      user={profile.data}
+      subscriptionPlan={
+        typeof subscription.data?.plan === "string"
+          ? subscription.data.plan
+          : typeof subscription.data?.subscriptionPlan === "string"
+            ? subscription.data.subscriptionPlan
+            : typeof subscription.data?.currentPlan === "string"
+              ? subscription.data.currentPlan
+              : undefined
+      }
+    />
+  );
 }
 
-function ProfileForm({ role, user }: { role: UserRole; user: User }) {
+function ProfileForm({
+  role,
+  user,
+  subscriptionPlan,
+}: {
+  role: UserRole;
+  user: User;
+  subscriptionPlan?: string;
+}) {
   const queryClient = useQueryClient();
   const [image, setImage] = useState<string[]>(user.image ? [user.image] : []);
   const form = useForm<ProfileValues>({
@@ -93,7 +119,19 @@ function ProfileForm({ role, user }: { role: UserRole; user: User }) {
       >
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="font-heading text-xl">Your profile</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <CardTitle className="font-heading text-xl">Your profile</CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="capitalize">
+                  {role}
+                </Badge>
+                {role === "vendor" &&
+                (isPremiumPlan(user.subscriptionPlan) ||
+                  isPremiumPlan(subscriptionPlan)) ? (
+                  <VendorBadge premium />
+                ) : null}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">

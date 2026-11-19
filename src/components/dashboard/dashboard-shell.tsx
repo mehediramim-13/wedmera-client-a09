@@ -51,6 +51,8 @@ import { clearTokenCache } from "@/lib/api";
 import { getProfilePath } from "@/lib/paths";
 import type { UserRole } from "@/lib/types";
 import { getRoleFromUser } from "@/lib/auth-routing";
+import { useCurrentUser, useSubscription } from "@/lib/queries";
+import { isPremiumPlan } from "@/lib/subscription-utils";
 
 const navigation = {
   vendor: [
@@ -150,6 +152,23 @@ export function DashboardShell({
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const user = session?.user;
+  const currentUser = useCurrentUser(role === "vendor");
+  const subscription = useSubscription(role === "vendor");
+  const subscriptionPlan =
+    typeof subscription.data?.plan === "string"
+      ? subscription.data.plan
+      : typeof subscription.data?.subscriptionPlan === "string"
+        ? subscription.data.subscriptionPlan
+        : typeof subscription.data?.currentPlan === "string"
+          ? subscription.data.currentPlan
+          : undefined;
+  const vendorIsPremium =
+    role === "vendor" &&
+    isPremiumPlan(
+      subscriptionPlan ??
+        currentUser.data?.subscriptionPlan ??
+        user?.subscriptionPlan,
+    );
 
   async function signOut() {
     await authClient.signOut();
@@ -215,7 +234,7 @@ export function DashboardShell({
                   <Badge className="mt-2 border-0 bg-secondary text-secondary-foreground capitalize">
                     {role}
                   </Badge>
-                  {role === "vendor" && user?.subscriptionPlan === "premium" ? (
+                  {vendorIsPremium ? (
                     <span className="mt-2 inline-flex">
                       <VendorBadge premium />
                     </span>
