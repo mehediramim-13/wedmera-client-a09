@@ -131,10 +131,31 @@ export interface VendorSubscription {
   plan: SubscriptionPlan;
   effectivePlan: SubscriptionPlan;
   expiresAt: string | null;
+  currentPeriodStart?: string | null;
   currentPeriodEnd?: string | null;
   cancelAtPeriodEnd?: boolean;
   limits: { activeServices: number };
   activeServicesCount: number;
+  payments?: Array<{
+    _id?: string;
+    plan?: SubscriptionPlan | string;
+    amount?: number;
+    currency?: string;
+    status?: string;
+    createdAt?: string;
+    periodStart?: string | null;
+    periodEnd?: string | null;
+  }>;
+  paymentHistory?: Array<{
+    _id?: string;
+    plan?: SubscriptionPlan | string;
+    amount?: number;
+    currency?: string;
+    status?: string;
+    createdAt?: string;
+    periodStart?: string | null;
+    periodEnd?: string | null;
+  }>;
 }
 
 export interface AdminUser {
