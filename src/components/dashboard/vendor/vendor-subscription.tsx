@@ -17,6 +17,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   useCancelSubscription,
   useCreateCheckout,
+  useResumeSubscription,
   useVendorOverview,
   useVendorSubscription,
 } from "@/hooks/use-vendor";
@@ -29,6 +30,7 @@ export function VendorSubscription() {
   const overviewQuery = useVendorOverview();
   const checkout = useCreateCheckout();
   const cancel = useCancelSubscription();
+  const resume = useResumeSubscription();
 
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
@@ -140,10 +142,10 @@ export function VendorSubscription() {
             ) : cancelAtPeriodEnd ? (
               <Button
                 className="w-full"
-                disabled={checkout.isPending}
-                onClick={() => checkout.mutate()}
+                disabled={resume.isPending}
+                onClick={() => resume.mutate()}
               >
-                {checkout.isPending ? "Redirecting…" : "Resume subscription"}
+                {resume.isPending ? "Resuming…" : "Resume subscription"}
               </Button>
             ) : showCancel ? (
               <Button

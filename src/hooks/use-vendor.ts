@@ -156,6 +156,47 @@ export function useCreateCheckout() {
   });
 }
 
+export function useResumeSubscription() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await apiFetch<{ message?: string }>(
+        "/vendor/subscription/resume",
+        { method: "POST" },
+      );
+      if (process.env.NODE_ENV === "development") {
+        console.log("Resume subscription", {
+          httpStatus: 200,
+          message: result?.message,
+        });
+      }
+      return result;
+    },
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.vendorSubscription }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.me }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.vendorOverview }),
+      ]);
+      await queryClient.refetchQueries({ queryKey: queryKeys.vendorSubscription });
+      router.refresh();
+      toast.success(data?.message || "Subscription resumed.");
+    },
+    onError: (error) => {
+      const apiError = error as { status?: number; message?: string };
+      if (process.env.NODE_ENV === "development") {
+        console.log("Resume subscription", {
+          httpStatus: apiError?.status ?? 0,
+          message: apiError?.message ?? errorMessage(error),
+        });
+      }
+      toast.error(errorMessage(error));
+    },
+  });
+}
+
 export function useCancelSubscription() {
   const queryClient = useQueryClient();
   const router = useRouter();
