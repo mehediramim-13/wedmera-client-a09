@@ -36,6 +36,7 @@ export function VendorSubscription() {
 
   const subscription = subscriptionQuery.data;
   const overview = overviewQuery.data;
+  // Single source of truth: the plan value returned by GET /vendor/subscription.
   const isPremium = subscription?.effectivePlan === "premium";
   const expiresAt = subscription?.expiresAt ?? overview?.subscriptionExpiresAt ?? null;
   const periodEnd = subscription?.currentPeriodEnd ?? expiresAt;
@@ -60,7 +61,14 @@ export function VendorSubscription() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {subscriptionQuery.isLoading || !subscription ? (
+        <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+          Loading your subscription…
+        </div>
+      ) : null}
+
+      {subscription ? (
+        <div className="grid gap-4 lg:grid-cols-2">
         {/* Free plan */}
         <Card className={cn(!isPremium && "border-primary/40")}>
           <CardHeader>
@@ -169,6 +177,7 @@ export function VendorSubscription() {
           </CardFooter>
         </Card>
       </div>
+      ) : null}
 
       {isPremium ? (
         <Card>
