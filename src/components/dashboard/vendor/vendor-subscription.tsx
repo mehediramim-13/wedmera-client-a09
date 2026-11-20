@@ -36,11 +36,13 @@ export function VendorSubscription() {
   const overview = overviewQuery.data;
   const isPremium = subscription?.effectivePlan === "premium";
   const expiresAt = subscription?.expiresAt ?? overview?.subscriptionExpiresAt ?? null;
+  const periodEnd = subscription?.currentPeriodEnd ?? expiresAt;
+  const cancelAtPeriodEnd = Boolean(subscription?.cancelAtPeriodEnd);
   const activeCount = subscription?.activeServicesCount ?? overview?.activeServices ?? 0;
   const limit = subscription?.limits.activeServices ?? 3;
 
   // Decide UI from refetched server data only.
-  const showCancel = isPremium && !subscriptionQuery.isPending;
+  const showCancel = isPremium && !cancelAtPeriodEnd && !subscriptionQuery.isPending;
 
   return (
     <div className="space-y-6">
@@ -105,7 +107,12 @@ export function VendorSubscription() {
               <li>All Free plan features</li>
             </ul>
             <p className="text-lg font-semibold">{PREMIUM_PRICE_LABEL}</p>
-            {isPremium && expiresAt ? (
+            {isPremium && cancelAtPeriodEnd && periodEnd ? (
+              <p className="text-xs text-muted-foreground">
+                Your Premium plan is cancelled and will end on{" "}
+                {formatDate(periodEnd)}. You keep Premium features until then.
+              </p>
+            ) : isPremium && expiresAt ? (
               <p className="text-xs text-muted-foreground">
                 Premium is active until {formatDate(expiresAt)}.
               </p>
@@ -130,6 +137,14 @@ export function VendorSubscription() {
                   </>
                 )}
               </Button>
+            ) : cancelAtPeriodEnd ? (
+              <Button
+                className="w-full"
+                disabled={checkout.isPending}
+                onClick={() => checkout.mutate()}
+              >
+                {checkout.isPending ? "Redirecting…" : "Resume subscription"}
+              </Button>
             ) : showCancel ? (
               <Button
                 variant="destructive"
@@ -140,7 +155,11 @@ export function VendorSubscription() {
                 {cancel.isPending ? "Cancelling…" : "Cancel subscription"}
               </Button>
             ) : null}
-            {isPremium && expiresAt && !showCancel ? (
+            {isPremium && cancelAtPeriodEnd && periodEnd ? (
+              <p className="text-xs text-muted-foreground">
+                Premium until {formatDate(periodEnd)}, will not renew.
+              </p>
+            ) : isPremium && expiresAt && !showCancel && !cancelAtPeriodEnd ? (
               <p className="text-xs text-muted-foreground">
                 Premium until {formatDate(expiresAt)}, will not renew.
               </p>
