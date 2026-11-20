@@ -203,11 +203,24 @@ export function VendorSubscription() {
                     : "Premium is active."}
                 </span>
                 <span className="text-muted-foreground">
-                  Active services: {activeCount}
+                  {activeCount} active services
                 </span>
               </CardContent>
             </Card>
-          ) : null}
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Current status</CardTitle>
+                <CardDescription>Your current plan.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center gap-3 text-sm">
+                <StatusBadge status="Free" />
+                <span className="text-muted-foreground">
+                  {activeCount} / {limit} active services
+                </span>
+              </CardContent>
+            </Card>
+          )}
 
           {payments.length > 0 ? (
             <Card>
