@@ -16,9 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import { queryKeys, useAdminUsers } from "@/lib/queries";
-import type { User } from "@/lib/types";
+import type { Paginated, User } from "@/lib/types";
 
 const PAGE_SIZE = 10;
 
@@ -49,19 +49,53 @@ export function AdminUsers() {
     mutationFn: (user: User) => {
       const id = getUserId(user);
       if (!id) throw new Error("This account is missing its ID.");
-      return apiFetch(`/admin/users/${encodeURIComponent(id)}`, {
+      return apiFetch<User>(`/admin/users/${encodeURIComponent(id)}`, {
         method: "PATCH",
-        body: { isBlocked: !user.isBlocked },
+        // API_URL already ends in /api, so this path stays relative to it.
+        body: { status: user.isBlocked ? "active" : "blocked" },
       });
     },
-    onSuccess: async () => {
-      toast.success(userToToggle?.isBlocked ? "User unblocked." : "User blocked.");
+    onSuccess: async (updatedUser) => {
+      toast.success(updatedUser.isBlocked ? "User blocked." : "User unblocked.");
       setUserToToggle(null);
+
+      // Reflect the new account status immediately in every cached users list.
+      queryClient.setQueriesData<Paginated<User>>(
+        { queryKey: ["admin", "users"] },
+        (current) =>
+          current
+            ? {
+                ...current,
+                items: current.items.map((item) =>
+                  getUserId(item) === getUserId(updatedUser)
+                    ? {
+                        ...item,
+                        ...updatedUser,
+                        id: getUserId(updatedUser) ?? item.id,
+                      }
+                    : item,
+                ),
+              }
+            : current,
+      );
+
       await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.adminOverview });
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Could not update this account."),
+    onError: (error) => {
+      // The shared API layer already signed the user out and showed the
+      // blocked-account message for this case.
+      if (
+        error instanceof ApiError &&
+        error.status === 403 &&
+        error.message === "Your account has been blocked."
+      ) {
+        return;
+      }
+      toast.error(
+        error instanceof Error ? error.message : "Could not update this account.",
+      );
+    },
   });
 
   const totalPages = Math.max(1, users.data?.pages ?? 1);
@@ -113,7 +147,7 @@ export function AdminUsers() {
         <ErrorState message={users.error.message} onRetry={() => void users.refetch()} />
       ) : users.data?.items.length ? (
         <>
-          <div className="overflow-hidden rounded-2xl border bg-card">
+          <div className="hidden overflow-hidden rounded-2xl border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -153,6 +187,54 @@ export function AdminUsers() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+          <div className="space-y-3 md:hidden">
+            {users.data.items.map((user) => (
+              <div className="rounded-2xl border bg-card p-4" key={getUserId(user) ?? user.email}>
+                <dl className="space-y-3">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</dt>
+                    <dd className="break-words text-sm font-medium">{user.name}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</dt>
+                    <dd className="break-words text-sm">{user.email}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Role</dt>
+                    <dd className="break-words text-sm capitalize">{user.role}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</dt>
+                    <dd className="break-words text-sm">
+                      <StatusBadge status={user.isBlocked ? "Blocked" : "Active"} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Joined</dt>
+                    <dd className="break-words text-sm">{createdLabel(user.createdAt)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Access</dt>
+                    <dd className="pt-1">
+                      <Button
+                        aria-label={`${user.isBlocked ? "Unblock" : "Block"} ${user.name}`}
+                        className="w-full"
+                        onClick={() => setUserToToggle(user)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {user.isBlocked ? (
+                          <><ShieldCheck className="mr-2 size-4" /> Unblock</>
+                        ) : (
+                          <><ShieldBan className="mr-2 size-4" /> Block</>
+                        )}
+                      </Button>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
           </div>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
