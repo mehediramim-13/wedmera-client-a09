@@ -246,11 +246,17 @@ async function send<T>(
 async function handleAuthorizationError(error: ApiError) {
   if (typeof window === "undefined") return;
 
-  if (error.status === 403 && error.message.toLowerCase().includes("blocked")) {
+  if (
+    error.status === 403 &&
+    error.message.trim().toLowerCase() === "your account has been blocked."
+  ) {
     clearTokenCache();
     toast.error("Your account is blocked");
-    await authClient.signOut();
-    window.location.assign("/signin?blocked=1");
+    try {
+      await authClient.signOut();
+    } finally {
+      window.location.assign("/signin?blocked=1");
+    }
     return;
   }
 
