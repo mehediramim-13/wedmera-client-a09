@@ -124,7 +124,7 @@ export function AdminServices() {
         />
       ) : services.data?.items.length ? (
         <>
-          <div className="overflow-hidden rounded-2xl border bg-card">
+          <div className="hidden overflow-hidden rounded-2xl border bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -212,6 +212,101 @@ export function AdminServices() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+          <div className="space-y-3 md:hidden">
+            {services.data.items.map((service) => (
+              <div className="rounded-2xl border bg-card p-4" key={service._id}>
+                <dl className="space-y-3">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Listing</dt>
+                    <dd className="pt-2">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted">
+                          {service.images[0] ? (
+                            <Image
+                              alt=""
+                              className="object-cover"
+                              fill
+                              sizes="48px"
+                              src={service.images[0]}
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0">
+                          <Link
+                            className="break-words font-medium hover:text-primary"
+                            href={`/services/${encodeURIComponent(service._id)}`}
+                          >
+                            {service.serviceName}
+                          </Link>
+                          <p className="break-words text-xs text-muted-foreground">
+                            {service.category} · {service.location}
+                          </p>
+                        </div>
+                      </div>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vendor</dt>
+                    <dd className="break-words text-sm font-medium">
+                      {service.vendor.businessName || service.vendor.name}
+                    </dd>
+                    <dd className="break-words text-xs text-muted-foreground">
+                      {service.vendor.name}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Price</dt>
+                    <dd className="break-words text-sm">{money(service.price)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</dt>
+                    <dd className="break-words text-sm"><StatusBadge status={service.status} /></dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Submitted</dt>
+                    <dd className="break-words text-sm">{createdLabel(service.createdAt)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Review</dt>
+                    <dd className="pt-1">
+                      {service.status === "Pending" ? (
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            aria-label={`Approve ${service.serviceName}`}
+                            className="flex-1"
+                            disabled={moderate.isPending}
+                            onClick={() =>
+                              moderate.mutate({ service, nextStatus: "Approved" })
+                            }
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Check className="mr-1 size-4" />
+                            Approve
+                          </Button>
+                          <Button
+                            aria-label={`Reject ${service.serviceName}`}
+                            className="flex-1"
+                            disabled={moderate.isPending}
+                            onClick={() =>
+                              moderate.mutate({ service, nextStatus: "Rejected" })
+                            }
+                            size="sm"
+                            variant="ghost"
+                          >
+                            <X className="mr-1 size-4" />
+                            Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Reviewed</span>
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
           </div>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
