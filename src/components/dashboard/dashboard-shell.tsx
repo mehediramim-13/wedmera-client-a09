@@ -1,42 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
   CalendarDays,
   ClipboardList,
   CreditCard,
   LayoutDashboard,
-  LogOut,
   Package,
   Settings,
   Shield,
   Users,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
-import { Logo } from "@/components/shared/logo";
 import { Navbar } from "@/components/shared/navbar";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -45,12 +29,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { VendorBadge } from "@/components/shared/vendor-badge";
-import { authClient } from "@/lib/auth-client";
-import { clearTokenCache } from "@/lib/api";
-import { getProfilePath } from "@/lib/paths";
 import type { UserRole } from "@/lib/types";
-import { getRoleFromUser } from "@/lib/auth-routing";
 import { useSubscription } from "@/lib/queries";
 import { isPremiumPlan } from "@/lib/subscription-utils";
 
@@ -92,13 +71,6 @@ function DashboardSidebar({ role }: { role: UserRole }) {
       className="inset-y-auto top-16 h-[calc(100svh-4rem)] border-sidebar-border"
       collapsible="icon"
     >
-      <SidebarHeader className="min-h-16 justify-center border-b border-sidebar-border px-3">
-        <Logo
-          className={compact ? "justify-center" : ""}
-          size={compact ? 34 : 38}
-          variant={compact ? "mark" : "full"}
-        />
-      </SidebarHeader>
       <SidebarContent className="py-3">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -154,25 +126,6 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
-  const user = session?.user;
-  const subscription = useSubscription(role === "vendor");
-  const vendorIsPremium =
-    role === "vendor" &&
-    isPremiumPlan(subscription.data?.effectivePlan);
-
-  async function signOut() {
-    await authClient.signOut();
-    clearTokenCache();
-    queryClient.clear();
-    toast.success("You’re signed out.");
-    router.push("/");
-    router.refresh();
-  }
-
-  const roleFromSession = getRoleFromUser(user?.role);
 
   return (
     <>
@@ -207,53 +160,6 @@ export function DashboardShell({
                 My Bookings
               </Link>
             ) : null}
-            <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                aria-label="Open account menu"
-                className="inline-flex size-9 items-center justify-center rounded-full border border-transparent p-0 outline-none transition hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <Avatar className="size-8">
-                  <AvatarImage alt={user?.name ?? "Account"} src={user?.image ?? undefined} />
-                  <AvatarFallback>{user?.name?.slice(0, 1) ?? "W"}</AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 rounded-2xl border p-2">
-                <DropdownMenuLabel className="px-3 py-3">
-                  <span className="block truncate">{user?.name ?? "Account"}</span>
-                  <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
-                    {user?.email}
-                  </span>
-                  <Badge className="mt-2 border-0 bg-secondary text-secondary-foreground capitalize">
-                    {role}
-                  </Badge>
-                  {vendorIsPremium ? (
-                    <span className="mt-2 inline-flex">
-                      <VendorBadge premium />
-                    </span>
-                  ) : null}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="h-10 cursor-pointer px-3"
-                  onClick={() =>
-                    router.push(getProfilePath(roleFromSession ?? role))
-                  }
-                >
-                  <Settings />
-                  Profile settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="h-10 cursor-pointer px-3"
-                  onClick={() => void signOut()}
-                  variant="destructive"
-                >
-                  <LogOut />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </header>
         <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
